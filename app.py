@@ -1,26 +1,17 @@
 import streamlit as st
 from datetime import datetime
 from pymongo import MongoClient
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
+import os
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
-KEY_VAULT_NAME = "kv-sem14-prueba" 
-KEY_VAULT_URI = f"https://kv-sem14-prueba.vault.azure.net/"
-# REEMPLAZA "nombre-de-tu-secreto" con el nombre que le pusiste al secreto en Azure
-SECRET_NAME = "sc-mongodb" 
 
 @st.cache_resource
 def init_mongo_connection():
     try:
-        # Autenticación en Azure usando la identidad de la Web App o credenciales locales
-        credential = DefaultAzureCredential()
-        secret_client = SecretClient(vault_url=KEY_VAULT_URI, credential=credential)
-        
         # Obtenemos la cadena de conexión guardada de forma segura
-        mongo_uri = secret_client.get_secret(SECRET_NAME).value
-        
+        mongo_uri = os.getenv("MONGODB_URI")        
         # Conectamos a MongoDB
-        client = MongoClient(mongo_uri)
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         return client
     except Exception as e:
         st.error(f"Error al conectar con los servicios de Azure/MongoDB: {e}")
